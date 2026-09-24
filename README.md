@@ -65,19 +65,36 @@ npm run dev
 
 ブラウザで [http://localhost:3000](http://localhost:3000) を開きます。
 
-### 4. 本番ビルド
+### 4. 本番ビルド（静的エクスポート）
 
 ```bash
 npm run build
-npm run start
 ```
+
+`out/` ディレクトリに完全静的ファイル（HTML/CSS/JS）が生成されます。
+
+---
+
+## ☁️ Cloudflare Pages での公開手順
+
+完全静的エクスポート構成（`output: 'export'`）に対応しているため、Cloudflare Pages の無料枠（転送量無制限）で即時公開できます。
+
+1. **Cloudflare Dashboard** にログイン
+2. **Workers & Pages** > **Create application** > **Pages** > **Connect to Git**
+3. `yakkun/Tojun` リポジトリを選択
+4. **ビルド設定**：
+   - **Framework preset**: `None` または `Next.js (Static HTML Export)`
+   - **Build command**: `npm run build`
+   - **Build output directory**: `out`
+5. **Save and Deploy** をクリック（約1分で本番URLが発行されます）
 
 ---
 
 ## 🛠 技術スタック
 
-- **Framework**: Next.js 16 (App Router), React 19, TypeScript
+- **Framework**: Next.js 16 (App Router / Static Export), React 19, TypeScript
+- **Hosting Target**: Cloudflare Pages
 - **Styling**: Tailwind CSS
-- **AI Engine**: TypeSafe AI Jev SDK (`@typesafe-ai/sdk`)
+- **AI Engine**: TypeSafe AI Jev SDK (`@typesafe-ai/sdk`) [BYOK対応]
 - **Icons**: Lucide Icons
 - **Dataset**: 日本百名山100座マスタ（標高、山域、難易度、コースタイム、適期月、特徴タグ、アクセス情報）

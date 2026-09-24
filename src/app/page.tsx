@@ -15,6 +15,7 @@ import {
 import { HYAKUMEIZAN_LIST } from "@/data/mountains-hyakumeizan";
 import { STAGES } from "@/data/mountain-lists";
 import { findClosestPrefecture } from "@/data/prefectures";
+import { evaluateMountainsWithJev } from "@/lib/typesafe";
 import dynamic from "next/dynamic";
 import {
   Compass,
@@ -145,7 +146,7 @@ export default function Home() {
     }
   }, []);
 
-  // 設定変更時にレコメンドAPIを呼び出し
+  // 設定変更時にレコメンド計算
   const fetchRecommendations = async (
     currentPrefs: UserPreferences,
     currentKey: string,
@@ -153,31 +154,17 @@ export default function Home() {
   ) => {
     setIsLoading(true);
     try {
-      const res = await fetch("/api/recommend", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(currentKey ? { "x-typesafe-api-key": currentKey } : {}),
-        },
-        body: JSON.stringify({
-          prefecture: currentPrefs.prefecture,
-          experienceLevel: currentPrefs.experienceLevel,
-          travelPreference: currentPrefs.travelPreference,
-          climbedMountainIds: currentPrefs.climbedMountainIds,
-          targetListId: listId,
-          apiKey: currentKey || undefined,
-        }),
-      });
-
-      if (!res.ok) throw new Error("Failed to fetch recommendations");
-
-      const data = await res.json();
-      if (data.success) {
-        setRecommendations(data.recommendations);
-        setIsUsingRealJev(data.usingRealJev);
-      }
+      const climbedSet = new Set<string>(currentPrefs.climbedMountainIds);
+      const unclimbed = HYAKUMEIZAN_LIST.filter((m) => !climbedSet.has(m.id));
+      const recs = await evaluateMountainsWithJev(
+        unclimbed,
+        currentPrefs,
+        currentKey || undefined
+      );
+      setRecommendations(recs);
+      setIsUsingRealJev(Boolean(currentKey));
     } catch (err) {
-      console.error("Error fetching recommendations:", err);
+      console.error("Error evaluating recommendations:", err);
     } finally {
       setIsLoading(false);
     }
@@ -845,15 +832,19 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="flex items-center space-x-6 text-slate-400 text-xs">
-            <span>日本百名山 (100座) 対応</span>
-            <span>日本二百名山 (近日公開)</span>
-            <button
-              onClick={() => setIsApiKeyModalOpen(true)}
-              className="text-slate-400 hover:text-white font-medium"
-            >
-              API設定
-            </button>
+          <div className="flex flex-col md:flex-row items-center gap-3 text-slate-400 text-xs">
+            <div className="flex items-center space-x-4">
+              <span>百名山100座対応</span>
+              <button
+                onClick={() => setIsApiKeyModalOpen(true)}
+                className="text-slate-400 hover:text-white font-medium transition-colors"
+              >
+                API設定
+              </button>
+            </div>
+            <span className="text-[11px] text-slate-400">
+              写真: Wikimedia Commons (CC/PD) · 地図: 国土地理院 / OSM
+            </span>
           </div>
         </div>
       </footer>
